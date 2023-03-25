@@ -187,6 +187,7 @@ private:
     vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
     {
         vector<Texture> textures;
+        std::cerr << "Postoji " << mat->GetTextureCount(type) << " tekstura ovog tipa: " << typeName << endl;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
@@ -205,6 +206,7 @@ private:
             if(!skip)
             {   // if texture hasn't been loaded already, load it
                 Texture texture;
+                std::cerr << "Ucitali smo " << str.C_Str() << endl;
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
                 texture.type = typeName;
                 texture.path = str.C_Str();
