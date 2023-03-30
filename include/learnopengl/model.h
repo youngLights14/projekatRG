@@ -38,6 +38,8 @@ public:
     Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
+        std::cerr << "Ucitao sam model!\n";
+        std::cerr << "Imam ucitamo " << textures_loaded.size() << " tekstura!\n";
     }
 
     // draws the model, and thus all its meshes
@@ -214,6 +216,7 @@ private:
                 textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
             }
         }
+
         return textures;
     }
 };
@@ -236,7 +239,7 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
 
     filename = directory + '/' + imeFajla;
 
-    //std::cerr << "Putanja " << filename << endl;
+    std::cerr << "Putanja " << filename << endl;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);

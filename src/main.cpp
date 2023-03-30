@@ -173,6 +173,7 @@ int main() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader travaShader("resources/shaders/2.model_lighting.vs", "resources/shaders/blending.fs");
 
     // load models
     // -----------
@@ -234,14 +235,30 @@ int main() {
         ourShader.setMat4("model", model);
         ourModel.Draw(ourShader);
 
+        travaShader.use();
+        travaShader.setVec3("pointLight.ambient", dirLight.ambient);
+        travaShader.setVec3("dirLight.diffuse", dirLight.diffuse);
+        travaShader.setVec3("dirLight.specular", dirLight.specular);
+        travaShader.setVec3("dirLight.direction", dirLight.direction);
+        travaShader.setVec3("viewPosition", programState->camera.Position);
+        travaShader.setFloat("material.shininess", 32.0f);
+        travaShader.setMat4("projection", projection);
+        travaShader.setMat4("view", view);
+
         model = glm::mat4(1.0f);
         model = glm::translate(model, dirLight.direction);
-        //model = glm::scale(model, glm::vec3(0.09f));
-        ourShader.setMat4("model", model);
-
+        model = glm::scale(model, glm::vec3(0.1f));
+        travaShader.setMat4("model", model);
         glEnable(GL_BLEND);
-        trava.Draw(ourShader);
+        trava.Draw(travaShader);
         glDisable(GL_BLEND);
+        // ostaci specularne ostaju jer u Texture strukturi imamo specular1 (samo napravim zaseban shader)
+
+
+
+
+
+
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
