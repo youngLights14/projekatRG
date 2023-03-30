@@ -187,7 +187,7 @@ private:
     vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
     {
         vector<Texture> textures;
-        std::cerr << "Postoji " << mat->GetTextureCount(type) << " tekstura ovog tipa: " << typeName << endl;
+        //std::cerr << "Postoji " << mat->GetTextureCount(type) << " tekstura ovog tipa: " << typeName << endl;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
@@ -206,7 +206,7 @@ private:
             if(!skip)
             {   // if texture hasn't been loaded already, load it
                 Texture texture;
-                std::cerr << "Ucitali smo " << str.C_Str() << endl;
+                //std::cerr << "Ucitali smo " << str.C_Str() << endl;
                 texture.id = TextureFromFile(str.C_Str(), this->directory);
                 texture.type = typeName;
                 texture.path = str.C_Str();
@@ -222,7 +222,21 @@ private:
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
 {
     string filename = string(path);
-    filename = directory + '/' + filename;
+
+    size_t poz = filename.find('\\');
+    while (poz != string::npos) {
+        filename[poz] = '/';
+        poz = filename.find('\\');
+    }
+
+    string imeFajla;
+    poz = filename.find_last_of('/');
+    imeFajla = &filename[poz + 1];
+    //cout << "Ime fajla: " << imeFajla << endl;
+
+    filename = directory + '/' + imeFajla;
+
+    //std::cerr << "Putanja " << filename << endl;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -243,8 +257,11 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (format == GL_RGBA)
+            std::cerr << "Tekstura " << imeFajla << " ima A kanal" << endl;
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 

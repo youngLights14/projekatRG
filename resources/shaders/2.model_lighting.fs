@@ -59,17 +59,20 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
+vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 
 void main()
 {
     vec3 normal = normalize(Normal);
     vec3 viewDir = normalize(viewPosition - FragPos);
-    vec3 result = CalcDirLight(dirLight, normal, viewDir);
-    FragColor = vec4(result, 1.0);
+    vec4 result = CalcDirLight(dirLight, normal, viewDir);
+    //FragColor = vec4(result, 1.0);
+
+    vec4 dif = texture(material.texture_diffuse1, TexCoords);
+    FragColor = dif;
 }
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
+vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
@@ -78,8 +81,13 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     // combine results
-    vec3 ambient = light.ambient * vec3(texture(material.texture_diffuse1, TexCoords));
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.texture_diffuse1, TexCoords));
-    vec3 specular = light.specular * spec * vec3(texture(material.texture_specular1, TexCoords).xxx);
-    return (ambient + diffuse + specular);
+    vec4 ambient = vec4(light.ambient, 1.0) * texture(material.texture_diffuse1, TexCoords);
+    vec4 diffuse = vec4(light.diffuse, 1.0) * diff * texture(material.texture_diffuse1, TexCoords);
+    vec4 specular = vec4(light.specular, 1.0) * spec * texture(material.texture_specular1, TexCoords); // crvena
+    //return (ambient + diffuse + specular);
+    vec4 result = (ambient + diffuse + specular);
+    //if (result.a < 0.4)     // ali mora Blending
+        //discard;
+
+    return result;
 }

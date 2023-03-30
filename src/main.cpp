@@ -170,19 +170,25 @@ int main() {
 
     // build and compile shaders
     // -------------------------
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
+    stbi_set_flip_vertically_on_load(false);
+    Model ourModel("resources/objects/jagoda/Strawberry_obj.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
+
+    Model trava("resources/objects/trava/trava.fbx");
+    trava.SetShaderTextureNamePrefix("material.");
 
     DirLight& dirLight = programState->dirLight;
     dirLight.ambient = glm::vec3(1.0, 1.0, 1.0);
     dirLight.diffuse = glm::vec3(1.0, 1.0, 1.0);
     dirLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
-    dirLight.direction = glm::vec3(0.0, -7.0, 5.0);
+    dirLight.direction = glm::vec3(-10.0, -5.0, 3.0);
 
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
@@ -214,7 +220,7 @@ int main() {
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -223,9 +229,19 @@ int main() {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model,
                                programState->backpackPosition); // translate it down so it's at the center of the scene
+
         model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
         ourModel.Draw(ourShader);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, dirLight.direction);
+        //model = glm::scale(model, glm::vec3(0.09f));
+        ourShader.setMat4("model", model);
+
+        glEnable(GL_BLEND);
+        trava.Draw(ourShader);
+        glDisable(GL_BLEND);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
