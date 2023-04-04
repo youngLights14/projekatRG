@@ -167,6 +167,9 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    // Def funkcioniše, ali modeli prosto nisu baš najadekvatniji
+    glCullFace(GL_BACK);
 
     // build and compile shaders
     // -------------------------
@@ -185,7 +188,7 @@ int main() {
     trava.SetShaderTextureNamePrefix("material.");
 
     DirLight& dirLight = programState->dirLight;
-    dirLight.ambient = glm::vec3(1.0, 1.0, 1.0);
+    dirLight.ambient = glm::vec3(0.3, 0.3, 0.3);
     dirLight.diffuse = glm::vec3(1.0, 1.0, 1.0);
     dirLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
@@ -211,7 +214,7 @@ int main() {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        ourShader.setVec3("pointLight.ambient", dirLight.ambient);
+        ourShader.setVec3("dirLight.ambient", dirLight.ambient);
         ourShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         ourShader.setVec3("dirLight.specular", dirLight.specular);
         ourShader.setVec3("dirLight.direction", dirLight.direction);
@@ -236,10 +239,11 @@ int main() {
         ourModel.Draw(ourShader);
 
         travaShader.use();
-        travaShader.setVec3("pointLight.ambient", dirLight.ambient);
+        travaShader.setVec3("dirLight.ambient", dirLight.ambient);
         travaShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         travaShader.setVec3("dirLight.specular", dirLight.specular);
         travaShader.setVec3("dirLight.direction", dirLight.direction);
+
         travaShader.setVec3("viewPosition", programState->camera.Position);
         travaShader.setFloat("material.shininess", 32.0f);
         travaShader.setMat4("projection", projection);
@@ -251,13 +255,8 @@ int main() {
         travaShader.setMat4("model", model);
         glEnable(GL_BLEND);
         trava.Draw(travaShader);
+        // sortiras modele po daljini, od odnosu na poziciju, ali samo one koji koriste blending
         glDisable(GL_BLEND);
-        // ostaci specularne ostaju jer u Texture strukturi imamo specular1 (samo napravim zaseban shader)
-
-
-
-
-
 
 
         if (programState->ImGuiEnabled)

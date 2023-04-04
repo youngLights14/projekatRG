@@ -40,6 +40,14 @@ public:
         loadModel(path);
         std::cerr << "Ucitao sam model!\n";
         std::cerr << "Imam ucitamo " << textures_loaded.size() << " tekstura!\n";
+
+        /*
+        for (int i = 0; i < meshes.size(); i++) {
+            for (int j = 0; j < meshes[i].vertices.size(); j++) {
+                std::cerr << "Vertex: (" << meshes[i].vertices[j].Position.x << ", " << meshes[i].vertices[j].Position.y << ", " << meshes[i].vertices[j].Position.y << ")" << endl;
+            }
+        } */
+
     }
 
     // draws the model, and thus all its meshes

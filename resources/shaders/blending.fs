@@ -83,10 +83,11 @@ vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     // combine results
     vec4 ambient = vec4(light.ambient, 1.0) * texture(material.texture_diffuse1, TexCoords);
     vec4 diffuse = vec4(light.diffuse, 1.0) * diff * texture(material.texture_diffuse1, TexCoords);
-    vec4 specular = vec4(light.specular, 1.0) * spec * texture(material.texture_specular1, TexCoords); // crvena
+    vec4 specular = vec4(light.specular, 1.0) * spec * texture(material.texture_specular1, TexCoords); // crvena!
     //return (ambient + diffuse + specular);
     vec4 result = (ambient + diffuse + specular);
-    if (result.a < 0.5)     // ali mora Blending
+
+    if (result.a < 0.5)
         discard;
 
     return result;
