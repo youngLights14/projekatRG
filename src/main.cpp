@@ -27,8 +27,8 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 // camera
 
@@ -64,9 +64,6 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
-    DirLight dirLight;
 
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
@@ -110,6 +107,8 @@ ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 
+unsigned int loadCubemap(vector<string> vector1);
+
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -124,7 +123,7 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Projekat Miljan Trajković 354/2022", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Projekat Miljan Trajkovic 354/2022", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -177,22 +176,100 @@ int main() {
 
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader travaShader("resources/shaders/2.model_lighting.vs", "resources/shaders/blending.fs");
+    Shader skyboxShader("resources/shaders/cubemap.vs", "resources/shaders/cubemap.fs");
 
     // load models
-    // -----------
     stbi_set_flip_vertically_on_load(false);
-    Model ourModel("resources/objects/jagoda/Strawberry_obj.obj");
+    Model ourModel("resources/objects/svemirskaStanica/source/raketa.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
 
-    Model trava("resources/objects/trava/trava.fbx");
+    Model trava("resources/objects/biljka/scene.gltf");
     trava.SetShaderTextureNamePrefix("material.");
 
-    DirLight& dirLight = programState->dirLight;
-    dirLight.ambient = glm::vec3(0.3, 0.3, 0.3);
-    dirLight.diffuse = glm::vec3(1.0, 1.0, 1.0);
+    Model astronaut("resources/objects/astronaut/source/3DEC_18.fbx");
+    astronaut.SetShaderTextureNamePrefix("material.");
+
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    vector<std::string> faces {
+        FileSystem::getPath("resources/textures/skybox/right.png"),
+        FileSystem::getPath("resources/textures/skybox/left.png"),
+        FileSystem::getPath("resources/textures/skybox/top.png"),
+        FileSystem::getPath("resources/textures/skybox/bottom.png"),
+        FileSystem::getPath("resources/textures/skybox/front.png"),
+        FileSystem::getPath("resources/textures/skybox/back.png")
+    };
+    unsigned int cubemapTexture = loadCubemap(faces);
+
+
+    DirLight dirLight;
+    dirLight.ambient = glm::vec3(0.3, 0.4, 1.0);
+    dirLight.diffuse = glm::vec3(1.0, 1.0, 1.0);    // 0 / 0.4 / 1.0
     dirLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
     dirLight.direction = glm::vec3(-10.0, -5.0, 3.0);
+
+    PointLight pointLight;
+    pointLight.position = glm::vec3(-3.89f, 1.38f, 3.07f);
+    pointLight.ambient = glm::vec3(1.0f, 0.0f, 3.0f);
+    pointLight.diffuse = glm::vec3(1.0f, 0.0f, 3.0f);
+    pointLight.specular = glm::vec3(1.0f);
+
+    pointLight.linear = 0.22f;
+    pointLight.quadratic = 0.20f;
+    pointLight.constant = 1.0f;
 
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
@@ -223,26 +300,37 @@ int main() {
         ourShader.setFloat("material.shininess", 32.0f);
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),(float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
         // render the loaded model
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        model = glm::translate(model,glm::vec3(0.0f));
+        model = glm::scale(model, glm::vec3(1.5f));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
         ourModel.Draw(ourShader);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-1.0f, -1.0f, 5.6f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        ourShader.setMat4("model", model);
+        astronaut.Draw(ourShader);
+
 
         travaShader.use();
         travaShader.setVec3("dirLight.ambient", dirLight.ambient);
         travaShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         travaShader.setVec3("dirLight.specular", dirLight.specular);
         travaShader.setVec3("dirLight.direction", dirLight.direction);
+        travaShader.setVec3("pointLight.position", pointLight.position);
+        travaShader.setVec3("pointLight.ambient", pointLight.ambient);
+        travaShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        travaShader.setVec3("pointLight.specular", pointLight.specular);
+        travaShader.setFloat("pointLight.constant", pointLight.constant);
+        travaShader.setFloat("pointLight.linear", pointLight.linear);
+        travaShader.setFloat("pointLight.quadratic", pointLight.quadratic);
 
         travaShader.setVec3("viewPosition", programState->camera.Position);
         travaShader.setFloat("material.shininess", 32.0f);
@@ -250,20 +338,29 @@ int main() {
         travaShader.setMat4("view", view);
 
         model = glm::mat4(1.0f);
-        model = glm::translate(model, dirLight.direction);
-        model = glm::scale(model, glm::vec3(0.1f));
+        model = glm::translate(model, glm::vec3(-3.19f, -0.173f, 3.0f));
+        model = glm::scale(model, glm::vec3(0.75f));
         travaShader.setMat4("model", model);
         glEnable(GL_BLEND);
         trava.Draw(travaShader);
-        // sortiras modele po daljini, od odnosu na poziciju, ali samo one koji koriste blending
         glDisable(GL_BLEND);
 
 
-        if (programState->ImGuiEnabled)
-            DrawImGui(programState);
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        skyboxShader.use();
+        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+        skyboxShader.setMat4("projection", projection);
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE_CUBE_MAP);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
 
 
 
+        DrawImGui(programState);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -279,6 +376,32 @@ int main() {
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+unsigned int loadCubemap(vector<std::string> faces) {
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++) {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        }
+        else {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+        }
+
+        stbi_image_free(data);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -343,35 +466,34 @@ void DrawImGui(ProgramState *programState) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-
     {
-        static float f = 0.0f;
-        ImGui::Begin("Prozor projekta");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        ImGui::Begin("Kontrole");
+        ImGui::Text("Kretanje: W (napred), A (levo), S (nazad), D (desno)\n\tShift (dole), Space (gore)");
+        ImGui::Text("Brzina kamere: Q (-) / E (+)");
+        ImGui::Text("Otkljucavanje/zakljucavanje kursora i kamere: C");
+        ImGui::Checkbox("Debug informacije (F1)", &programState->ImGuiEnabled);
 
-        //ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
-        //ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
-        //ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
         ImGui::End();
     }
 
-    {
-        ImGui::Begin("Camera info");
-        const Camera& c = programState->camera;
-        ImGui::Text("Camera position: (%f, %f, %f)", c.Position.x, c.Position.y, c.Position.z);
-        ImGui::Text("(Yaw, Pitch): (%f, %f)", c.Yaw, c.Pitch);
-        ImGui::Text("Camera front: (%f, %f, %f)", c.Front.x, c.Front.y, c.Front.z);
-        ImGui::Checkbox("Camera mouse update", &programState->CameraMouseMovementUpdateEnabled);
-        ImGui::End();
+    if (programState->ImGuiEnabled) {
+        {
+            ImGui::Begin("Informacije o kameri");
+            const Camera& c = programState->camera;
+            ImGui::Text("Pozicija kamere: (%f, %f, %f)", c.Position.x, c.Position.y, c.Position.z);
+            ImGui::Text("(Yaw, Pitch): (%f, %f)", c.Yaw, c.Pitch);
+            ImGui::Text("Camera front: (%f, %f, %f)", c.Front.x, c.Front.y, c.Front.z);
+            ImGui::Checkbox("Camera mouse update", &programState->CameraMouseMovementUpdateEnabled);
+            ImGui::End();
+        }
     }
+
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+
+bool aktiviranoC = false;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
@@ -380,7 +502,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             programState->CameraMouseMovementUpdateEnabled = false;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if (!aktiviranoC) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                programState->CameraMouseMovementUpdateEnabled = true;
+            }
         }
     }
 
@@ -391,6 +516,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
+        aktiviranoC = !aktiviranoC;
     }
 
 }

@@ -39,7 +39,7 @@ public:
     {
         loadModel(path);
         std::cerr << "Ucitao sam model!\n";
-        std::cerr << "Imam ucitamo " << textures_loaded.size() << " tekstura!\n";
+        std::cerr << "Imam ucitamo " << textures_loaded.size() << " tekstura!\n\n";
 
         /*
         for (int i = 0; i < meshes.size(); i++) {

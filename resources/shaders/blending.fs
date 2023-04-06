@@ -71,9 +71,11 @@ void main()
 {
     vec3 normal = normalize(Normal);
     vec3 viewDir = normalize(viewPosition - FragPos);
-    vec4 result = CalcDirLight(dirLight, normal, viewDir);
+    vec4 result = CalcDirLight(dirLight, normal, viewDir) + CalcPointLight(pointLight, normal, FragPos, viewDir);
     //FragColor = vec4(result, 1.0);
 
+    if (result.a < 0.5)
+            discard;
 
     FragColor = result;
 }
@@ -97,9 +99,6 @@ vec4 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec4 specular = vec4(light.specular, 1.0) * spec * texture(material.texture_specular1, TexCoords).xxxw; // crvena!
 
     vec4 result = (ambient + diffuse + specular);
-
-    if (result.a < 0.5)
-        discard;
 
     return result;
 }
