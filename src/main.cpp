@@ -107,7 +107,7 @@ ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 
-unsigned int loadCubemap(vector<string> vector1);
+unsigned int loadCubemap(vector<std::string> vector1);
 
 int main() {
     // glfw: initialize and configure
@@ -270,6 +270,7 @@ int main() {
     pointLight.linear = 0.22f;
     pointLight.quadratic = 0.20f;
     pointLight.constant = 1.0f;
+
 
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
